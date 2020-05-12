@@ -29,6 +29,9 @@ To learn more about these blending modes:
 
 ### File Header
 
+
+|Field                       |# Bytes         |Description                        |
+|----------------------------|----------------|-----------------------------------|
 |ID Length                   |1 byte          |Size of the Image ID field         |
 |Color Map Type              |1 byte          |Is a color map included?           |
 |Image Type                  |1 byte          |Compressed? True Color? Greyscale? |
