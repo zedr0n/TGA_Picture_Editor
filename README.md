@@ -28,18 +28,26 @@ To learn more about these blending modes:
 ## TGA File Format
 
 ### File Header
-ID Length                   1 byte          Size of the Image ID field
-Color Map Type              1 byte          Is a color map included?
-Image Type                  1 byte          Compressed? True Color? Greyscale?
-Color Map Specifications    5 bytes         2 bytes: Color Map Origin     
-                                            2 bytes: Color Map Length
-                                            1 byte: Color Map Depth
-Image Specification         10 bytes        2 bytes: X-origin
-                                            2 bytes: Y-origin
-                                            2 bytes: Image width
-                                            2 bytes: Image height
-                                            1 byte: Pixel depth
-                                            1 byte: Image Descriptor
+
+|----------------------------|----------------|-----------------------------------|
+|ID Length                   |1 byte          |Size of the Image ID field         |
+|----------------------------|----------------|-----------------------------------|
+|Color Map Type              |1 byte          |Is a color map included?           |
+|----------------------------|----------------|-----------------------------------|
+|Image Type                  |1 byte          |Compressed? True Color? Greyscale? |
+|----------------------------|----------------|-----------------------------------|
+|Color Map Specifications    |5 bytes         |2 bytes: Color Map Origin          |
+|                            |                |2 bytes: Color Map Length          |
+|                            |                |1 byte: Color Map Depth            |
+|----------------------------|----------------|-----------------------------------|
+|Image Specification         |10 bytes        |2 bytes: X-origin                  |
+|                            |                |2 bytes: Y-origin                  |
+|                            |                |2 bytes: Image width               |
+|                            |                |2 bytes: Image height              |
+|                            |                |1 byte: Pixel depth                |
+|                            |                |1 byte: Image Descriptor           |
+|----------------------------|----------------|-----------------------------------|
+
 
 ## File Descriptions
 
