@@ -76,15 +76,20 @@ vector<Pixel> Picture::ImportDataPixels(string fileName, vector<Pixel> pixelVect
 	char redIN;
 	char blueIN;
 	char greenIN;
+	char alphaIN = 0;
 	int numberPixels = (this->fileHeader.getHeight()) * (this->fileHeader.getWidth());
+	int bitsPerPixel = this->fileHeader.bytesPerPixel;
 
 	for (int i = 0; i < numberPixels; i++)
 	{
 		infile.read(&blueIN, sizeof(blueIN));
 		infile.read(&greenIN, sizeof(greenIN));
 		infile.read(&redIN, sizeof(redIN));
-		
-		Pixel createdPixel((unsigned)redIN, (unsigned)blueIN, (unsigned)greenIN);
+		if(bitsPerPixel == 32) {
+			infile.read(&alphaIN, sizeof(alphaIN));
+		}
+
+		Pixel createdPixel((unsigned)redIN, (unsigned)blueIN, (unsigned)greenIN, (unsigned)alphaIN);
 		pixelVector.push_back(createdPixel);
 	}
 	infile.close();
@@ -98,9 +103,12 @@ void Picture::ImportData(string fileName)
 	this->pixelArray = ImportDataPixels(fileName, this->pixelArray);
 }
 
-void Picture::ExportData(string fileName)
+void Picture::ExportData(string fileName, const string& folder)
 {
-	ofstream outFile("output\\" + fileName, ios_base::binary);
+	string outFileName = fileName;
+	if(!folder.empty())
+		outFileName = folder + "\\" + outFileName;
+	ofstream outFile(outFileName, ios_base::binary);
 	outFile.write(&this->fileHeader.idLength, 1);
 	outFile.write(&this->fileHeader.colorMapType, 1);
 	outFile.write(&this->fileHeader.dataTypeCode, 1);
@@ -118,12 +126,43 @@ void Picture::ExportData(string fileName)
 		outFile.write((const char *)&this->pixelArray[i].blueAmount, 1);
 		outFile.write((const char *)&this->pixelArray[i].greenAmount, 1);
 		outFile.write((const char *)&this->pixelArray[i].redAmount, 1);
+		if(this->fileHeader.bytesPerPixel == 32)
+			outFile.write((const char *)&this->pixelArray[i].alphaAmount, 1);
 	}
 	outFile.close();
 
 }
 
-Picture Picture::verticalFlip(Picture &pic, string fileName)
+Picture Picture::horizontalFlip(Picture &pic, const string& fileName)
+{
+	vector<Pixel> pixelsFlipped;
+	for(int i = pic.fileHeader.height - 1 ; i >= 0; i--)
+	{
+		for(int j = 0; j < pic.fileHeader.width; j++)
+		{
+			pixelsFlipped.push_back(pic.pixelArray[i*pic.fileHeader.width + j]);			
+		}
+	}
+	Picture flippedPic(fileName, pic.fileHeader, pixelsFlipped);
+	return flippedPic;
+}
+
+
+Picture Picture::verticalFlip(Picture &pic, const string& fileName)
+{
+	vector<Pixel> pixelsFlipped;
+	for(int i = 0 ; i < pic.fileHeader.height; i++)
+	{
+		for(int j = pic.fileHeader.width-1; j >= 0; j--)
+		{
+			pixelsFlipped.push_back(pic.pixelArray[i*pic.fileHeader.width + j]);			
+		}
+	}
+	Picture flippedPic(fileName, pic.fileHeader, pixelsFlipped);
+	return flippedPic;
+}
+
+Picture Picture::diagonalFlip(Picture &pic, const string& fileName)
 {
 	vector<Pixel> pixelsFlipped;
 	for (int i = 0; i < pic.pixelArray.size(); i++)
@@ -134,7 +173,7 @@ Picture Picture::verticalFlip(Picture &pic, string fileName)
 	return flippedPic;
 }
 
-Picture Picture::multiplyBlend(Picture &pic,Picture &pic2, string fileName)
+Picture Picture::multiplyBlend(Picture &pic,Picture &pic2, const string& fileName)
 {
 	vector<Pixel> pixelsMultiplyBlend;
 	for (int i = 0; i < pic.pixelArray.size(); i++)
@@ -142,14 +181,14 @@ Picture Picture::multiplyBlend(Picture &pic,Picture &pic2, string fileName)
 		unsigned char redAmount = (((int)(pic.pixelArray[i].getRedAmount())*((int)pic2.pixelArray[i].getRedAmount())) / 255.0f) + 0.5f;
 		unsigned char blueAmount = (((int)(pic.pixelArray[i].getBlueAmount())*((int)pic2.pixelArray[i].getBlueAmount())) / 255.0f) +0.5f;
 		unsigned char greenAmount = (((int)(pic.pixelArray[i].getGreenAmount())*((int)pic2.pixelArray[i].getGreenAmount())) / 255.0f) +0.5f;
-		Pixel newPixel(redAmount, blueAmount, greenAmount);
+		Pixel newPixel(redAmount, blueAmount, greenAmount, pic.pixelArray[i].getAlphaAmount());
 		pixelsMultiplyBlend.push_back(newPixel);
 	}
 	Picture multiplyPic(fileName, pic.fileHeader, pixelsMultiplyBlend);
 	return multiplyPic;
 }
 
-Picture Picture::subtractBlend(Picture &pic, Picture &pic2, string fileName)
+Picture Picture::subtractBlend(Picture &pic, Picture &pic2, const string& fileName)
 {
 	vector<Pixel> pixelsSubtractBlend;
 	unsigned char redAmount = '0';
@@ -160,14 +199,14 @@ Picture Picture::subtractBlend(Picture &pic, Picture &pic2, string fileName)
 		char redAmount = Boundries(((((int)pic.pixelArray[i].getRedAmount() / 255.0f) - ((int)pic2.pixelArray[i].getRedAmount() / 255.0f)) * 255) + 0.5f);
 		char blueAmount = Boundries(((((int)pic.pixelArray[i].getBlueAmount() / 255.0f) - ((int)pic2.pixelArray[i].getBlueAmount() / 255.0f)) * 255) + 0.5f);
 		char greenAmount = Boundries(((((int)pic.pixelArray[i].getGreenAmount() / 255.0f) - ((int)pic2.pixelArray[i].getGreenAmount() / 255.0f)) * 255) + 0.5f);
-		Pixel newPixel(redAmount, blueAmount, greenAmount);
+		Pixel newPixel(redAmount, blueAmount, greenAmount, pic.pixelArray[i].getAlphaAmount());
 		pixelsSubtractBlend.push_back(newPixel);
 	}
 	Picture subtractPic(fileName, pic.fileHeader, pixelsSubtractBlend);
 	return subtractPic;
 }
 
-Picture Picture::screenBlend(Picture &pic, Picture &pic2, string fileName)
+Picture Picture::screenBlend(Picture &pic, Picture &pic2, const string& fileName)
 {
 	vector<Pixel> pixelsScreenBlend;
 	for (int i = 0; i < pic.pixelArray.size(); i++)
@@ -175,14 +214,14 @@ Picture Picture::screenBlend(Picture &pic, Picture &pic2, string fileName)
 		unsigned char redAmount = Boundries(((1 - ((1 - (pic.pixelArray[i].getRedAmount() / 255.0f))*(1 - (pic2.pixelArray[i].getRedAmount() / 255.0f)))) * 255)+0.5f);
 		unsigned char blueAmount = Boundries(((1 - ((1 - (pic.pixelArray[i].getBlueAmount() / 255.0f))*(1 - (pic2.pixelArray[i].getBlueAmount() / 255.0f)))) * 255)+0.5f);
 		unsigned char greenAmount = Boundries(((1 - ((1 - (pic.pixelArray[i].getGreenAmount() / 255.0f))*(1 - (pic2.pixelArray[i].getGreenAmount() / 255.0f)))) * 255)+0.5f);
-		Pixel newPixel(redAmount, blueAmount, greenAmount);
+		Pixel newPixel(redAmount, blueAmount, greenAmount, pic.pixelArray[i].getAlphaAmount());
 		pixelsScreenBlend.push_back(newPixel);
 	}
 	Picture multiplyPic(fileName, pic.fileHeader, pixelsScreenBlend);
 	return multiplyPic;
 }
 
-Picture Picture::overlayBlend(Picture &pic, Picture &pic2, string fileName)
+Picture Picture::overlayBlend(Picture &pic, Picture &pic2, const string& fileName)
 {
 	vector<Pixel> pixelsOverlayBlend;
 	unsigned char redAmount = '0';
@@ -205,7 +244,7 @@ Picture Picture::overlayBlend(Picture &pic, Picture &pic2, string fileName)
 		else
 			greenAmount = Boundries(((1 - (2 * (1 - (pic.pixelArray[i].getGreenAmount() / 255.0f))*(1 - (pic2.pixelArray[i].getGreenAmount() / 255.0f)))) * 255) + 0.5f);
 
-		Pixel newPixel(redAmount, blueAmount, greenAmount);
+		Pixel newPixel(redAmount, blueAmount, greenAmount, pic.pixelArray[i].alphaAmount);
 		pixelsOverlayBlend.push_back(newPixel);
 	}
 	Picture overlayPic(fileName, pic.fileHeader, pixelsOverlayBlend);

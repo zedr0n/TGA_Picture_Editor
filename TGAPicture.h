@@ -20,13 +20,15 @@ public:
 	vector<Pixel> ImportDataPixels(string, vector<Pixel>);
 	Header ImportDataHeader(string);
 	void ImportData(string);
-	void ExportData(string);
+	void ExportData(string, const string& = "");
 
-	Picture verticalFlip(Picture&, string);
-	Picture multiplyBlend(Picture&, Picture&, string);
-	Picture subtractBlend(Picture&, Picture&, string);
-	Picture screenBlend(Picture&, Picture&, string);
-	Picture overlayBlend(Picture&, Picture&, string);
+	Picture horizontalFlip(Picture&, const string& = "");
+	Picture verticalFlip(Picture&, const string& = "");
+	Picture diagonalFlip(Picture&, const string& = "");
+	Picture multiplyBlend(Picture&, Picture&, const string& = "");
+	Picture subtractBlend(Picture&, Picture&, const string& = "");
+	Picture screenBlend(Picture&, Picture&, const string& = "");
+	Picture overlayBlend(Picture&, Picture&, const string& = "");
 	Picture AddChange(Picture&, string, int, int, int);
 	Picture MultiplyChange(Picture&, string, int, int, int);
 	Picture SplitRed(Picture&, string);
